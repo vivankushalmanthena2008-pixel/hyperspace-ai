@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, lazy, Suspense } from 'react';
+import { useRef, useState, lazy, Suspense } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -11,23 +11,23 @@ const WorldCanvas = lazy(() =>
 const FEATURES = [
   {
     icon: Boxes,
-    title: 'Holographic Geometry',
-    description: 'Floating cubes with wireframe overlays and transmission materials react to time and position.',
+    title: 'Transparent Glass Sphere',
+    description: 'Optical glass enclosure with specular reflections that reveals the vibrant 3D metropolis within.',
   },
   {
     icon: Orbit,
-    title: 'Orbital Mechanics',
-    description: 'Multiple rings with satellite objects orbit at different speeds and tilt angles for layered depth.',
+    title: 'Orbital Mechanics & Beacons',
+    description: 'Triple energy rings and satellite probes orbit at independent speeds and inclinations.',
   },
   {
     icon: Sparkles,
-    title: 'Luminous Portals',
-    description: 'Animated ring portals pulse and rotate, creating focal points of light in 3D space.',
+    title: 'Procedural Cyber Architecture',
+    description: 'Over 40 distinct architectural towers with illuminated window grids, spires, and levitating apex crystal.',
   },
   {
     icon: Layers,
-    title: 'Parallax Depth',
-    description: 'Camera responds to both mouse movement and scroll position, shifting the entire composition.',
+    title: 'Interactive 360° Kinematics',
+    description: 'Click and drag to rotate the entire world in 360°, scroll to zoom, and toggle between cinematic camera views.',
   },
 ];
 
@@ -41,8 +41,8 @@ export function World3D() {
     offset: ['start end', 'end start'],
   });
 
-  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 1, 1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0.9, 1, 1, 0.95]);
+  const opacity = useTransform(scrollYProgress, [0, 0.05, 0.95, 1], [0.95, 1, 1, 0.95]);
+  const scale = useTransform(scrollYProgress, [0, 0.05, 0.95, 1], [0.98, 1, 1, 0.98]);
 
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     setScrollProgress(v);

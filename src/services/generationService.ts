@@ -244,18 +244,33 @@ function generateDemoBrief(prompt: string, style: VisualStyle): CreativeBrief {
     moodKeywords: STYLE_MOOD[style],
     createdAt: Date.now(),
     isDemo: true,
+    demoNote: 'Generated offline in simulation mode.',
   };
 }
 
-const DEMO_MODE = true;
-
 export const generationService: GenerationService = {
   isDemoMode() {
-    return DEMO_MODE;
+    return false;
   },
 
   async generate({ prompt, style }): Promise<GenerateResult> {
-    await new Promise((resolve) => setTimeout(resolve, 1400 + Math.random() * 800));
+    try {
+      const response = await fetch('/api/generate-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, style }),
+      });
+
+      if (response.ok) {
+        const brief = await response.json();
+        return brief;
+      }
+    } catch (err) {
+      console.warn('[GenerationService] Could not reach backend, falling back to local simulation:', err);
+    }
+
+    // Client-side fallback if server unreachable
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     return generateDemoBrief(prompt, style);
   },
 };

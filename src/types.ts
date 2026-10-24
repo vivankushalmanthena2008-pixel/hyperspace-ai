@@ -28,6 +28,7 @@ export interface CreativeBrief {
   moodKeywords: string[];
   createdAt: number;
   isDemo: boolean;
+  demoNote?: string;
 }
 
 export interface StyleOption {

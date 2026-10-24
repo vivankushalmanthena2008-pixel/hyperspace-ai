@@ -1,0 +1,7 @@
+{
+  "name": "HyperSpace AI — Creative Brief Intelligence",
+  "description": "Generate structured creative briefs from a single prompt. Visual direction, color palettes, asset suggestions, and next steps in seconds.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

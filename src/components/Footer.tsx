@@ -1,10 +1,21 @@
 import { Sparkles, Github, Twitter, Linkedin } from 'lucide-react';
+import type { ModalType } from '@/components/ui/InfoModal';
+import { audioService } from '@/services/audioService';
 
 interface FooterProps {
   onNavigate: (page: 'landing' | 'workspace') => void;
+  onOpenModal: (type: ModalType) => void;
 }
 
-export function Footer({ onNavigate }: FooterProps) {
+export function Footer({ onNavigate, onOpenModal }: FooterProps) {
+  const handleNavClick = (sectionId: string) => {
+    audioService.playNavSound();
+    onNavigate('landing');
+    setTimeout(() => {
+      document.querySelector(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    }, 80);
+  };
+
   return (
     <footer className="relative border-t border-white/[0.06] bg-base-950 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -24,17 +35,36 @@ export function Footer({ onNavigate }: FooterProps) {
               language, color, typography, and actionable next steps.
             </p>
             <div className="flex items-center gap-3 mt-6">
-              {[Twitter, Github, Linkedin].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/40 hover:text-cyan-glow hover:border-cyan-glow/30 transition-all"
-                  aria-label="Social link"
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
+              <a
+                href="https://twitter.com/intent/tweet?text=Checking%20out%20HyperSpace%20AI%20%E2%80%94%20Generate%20structured%20creative%20briefs%20from%20a%20single%20prompt!"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => audioService.playNavSound()}
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/40 hover:text-cyan-glow hover:border-cyan-glow/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow"
+                aria-label="Share on Twitter"
+              >
+                <Twitter className="w-4 h-4" />
+              </a>
+              <a
+                href="https://github.com/vivankushalmanthena2008-pixel/hyperspace-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => audioService.playNavSound()}
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/40 hover:text-cyan-glow hover:border-cyan-glow/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow"
+                aria-label="View source on GitHub"
+              >
+                <Github className="w-4 h-4" />
+              </a>
+              <a
+                href="https://www.linkedin.com/sharing/share-offsite/?url=https://github.com/vivankushalmanthena2008-pixel/hyperspace-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => audioService.playNavSound()}
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/40 hover:text-cyan-glow hover:border-cyan-glow/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow"
+                aria-label="Share on LinkedIn"
+              >
+                <Linkedin className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
@@ -42,23 +72,90 @@ export function Footer({ onNavigate }: FooterProps) {
             <h4 className="text-sm font-semibold text-white/80 mb-4">Product</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <button onClick={() => onNavigate('workspace')} className="text-white/40 hover:text-white transition-colors">
+                <button
+                  onClick={() => {
+                    audioService.playNavSound();
+                    onNavigate('workspace');
+                  }}
+                  className="text-white/40 hover:text-cyan-glow transition-colors focus-visible:outline-none focus-visible:underline"
+                >
                   Workspace
                 </button>
               </li>
-              <li><a href="#features" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">Features</a></li>
-              <li><a href="#pricing" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">Pricing</a></li>
-              <li><a href="#faq" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">FAQ</a></li>
+              <li>
+                <button
+                  onClick={() => handleNavClick('#features')}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  Features
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => handleNavClick('#pricing')}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  Pricing
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => handleNavClick('#faq')}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  FAQ
+                </button>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-sm font-semibold text-white/80 mb-4">Company</h4>
             <ul className="space-y-3 text-sm">
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">About</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">Privacy</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">Terms</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="text-white/40 hover:text-white transition-colors">Contact</a></li>
+              <li>
+                <button
+                  onClick={() => {
+                    audioService.playNavSound();
+                    onOpenModal('about');
+                  }}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  About
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    audioService.playNavSound();
+                    onOpenModal('privacy');
+                  }}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  Privacy Policy
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    audioService.playNavSound();
+                    onOpenModal('terms');
+                  }}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  Terms of Service
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    audioService.playNavSound();
+                    onOpenModal('contact');
+                  }}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  Contact & Sales
+                </button>
+              </li>
             </ul>
           </div>
         </div>
@@ -68,7 +165,7 @@ export function Footer({ onNavigate }: FooterProps) {
             © {new Date().getFullYear()} HyperSpace AI. All rights reserved.
           </p>
           <p className="text-xs text-white/30">
-            Built with React, TypeScript, Tailwind CSS & Framer Motion
+            Built with React, TypeScript, Three.js WebGL & Framer Motion
           </p>
         </div>
       </div>

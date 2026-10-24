@@ -14,14 +14,20 @@ import {
   Crown,
   Palette,
   Moon,
+  X,
+  Lightbulb,
 } from 'lucide-react';
 import { STYLE_OPTIONS, type CreativeBrief, type VisualStyle } from '@/types';
 import { generationService } from '@/services/generationService';
 import { BriefResult } from '@/components/workspace/BriefResult';
 import { HistoryPanel } from '@/components/workspace/HistoryPanel';
+import { CinematicButton } from '@/components/ui/CinematicButton';
+import { audioService } from '@/services/audioService';
 
 interface WorkspaceProps {
   onBack: () => void;
+  onShowToast?: (text: string, type?: 'success' | 'info') => void;
+  isProActive?: boolean;
 }
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -35,10 +41,33 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Moon,
 };
 
+const PROMPT_SUGGESTIONS = [
+  {
+    title: 'Recycled Denim Fashion',
+    text: 'A circular sustainable streetwear brand launching a recycled denim collection for eco-conscious urban creators.',
+    style: 'organic-natural' as VisualStyle,
+  },
+  {
+    title: 'Cyberpunk Rogue-Lite Game',
+    text: 'A fast-paced synthwave cyber-heist rogue-lite set in high-altitude Neo-Tokyo megastructures with holographic HUDs.',
+    style: 'futuristic-cyberpunk' as VisualStyle,
+  },
+  {
+    title: 'Nordic Architectural Studio',
+    text: 'A minimalist Scandinavian architecture firm creating zero-emissions timber cabins that blend into boreal forests.',
+    style: 'minimalist' as VisualStyle,
+  },
+  {
+    title: 'Swiss Horology Atelier',
+    text: 'A luxury bespoke mechanical watch atelier handcrafting celestial tourbillon timepieces for discerning collectors.',
+    style: 'luxury-editorial' as VisualStyle,
+  },
+];
+
 const MIN_PROMPT_LENGTH = 10;
 const MAX_PROMPT_LENGTH = 500;
 
-export function Workspace({ onBack }: WorkspaceProps) {
+export function Workspace({ onBack, onShowToast, isProActive }: WorkspaceProps) {
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<VisualStyle>('minimalist');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -53,6 +82,7 @@ export function Workspace({ onBack }: WorkspaceProps) {
     setError(null);
 
     if (!isValid) {
+      audioService.playToggleSound();
       setError(
         promptLength < MIN_PROMPT_LENGTH
           ? `Please enter at least ${MIN_PROMPT_LENGTH} characters describing your project.`
@@ -61,7 +91,9 @@ export function Workspace({ onBack }: WorkspaceProps) {
       return;
     }
 
+    audioService.playGenerateSound();
     setIsGenerating(true);
+
     try {
       const brief = await generationService.generate({
         prompt: prompt.trim(),
@@ -69,6 +101,9 @@ export function Workspace({ onBack }: WorkspaceProps) {
       });
       setCurrentBrief(brief);
       setHistory((prev) => [brief, ...prev]);
+      if (onShowToast) {
+        onShowToast(`Creative brief generated for "${brief.title}"!`, 'success');
+      }
     } catch {
       setError('Something went wrong while generating your brief. Please try again.');
     } finally {
@@ -76,11 +111,23 @@ export function Workspace({ onBack }: WorkspaceProps) {
     }
   };
 
+  const handleSelectStarter = (starter: (typeof PROMPT_SUGGESTIONS)[0]) => {
+    audioService.playSelectSound();
+    setPrompt(starter.text);
+    setSelectedStyle(starter.style);
+    setError(null);
+  };
+
   const handleClearHistory = () => {
+    audioService.playToggleSound();
     setHistory([]);
+    if (onShowToast) {
+      onShowToast('Session history cleared', 'info');
+    }
   };
 
   const handleSelectHistory = (brief: CreativeBrief) => {
+    audioService.playSelectSound();
     setCurrentBrief(brief);
   };
 
@@ -91,44 +138,91 @@ export function Workspace({ onBack }: WorkspaceProps) {
   };
 
   return (
-    <div className="min-h-screen pt-16 bg-base-950">
+    <div className="min-h-screen pt-16 bg-base-950 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors"
+            onClick={() => {
+              audioService.playNavSound();
+              onBack();
+            }}
+            className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow rounded-lg px-2 py-1"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-glow to-violet-glow flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-base-950" />
+          <div className="flex items-center gap-3">
+            {isProActive && (
+              <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-glow/20 text-cyan-glow border border-cyan-glow/40 font-semibold flex items-center gap-1.5 shadow-sm">
+                <Sparkles className="w-3 h-3" />
+                Pro Tier Active
+              </span>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-glow to-violet-glow flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-base-950" />
+              </div>
+              <span className="font-display text-sm font-semibold">
+                HyperSpace<span className="text-cyan-glow"> AI</span>
+              </span>
             </div>
-            <span className="font-display text-sm font-semibold">
-              HyperSpace<span className="text-cyan-glow"> AI</span>
-            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           {/* Main column */}
           <div className="space-y-6">
             {/* Input panel */}
-            <div className="glass-strong p-6 sm:p-8">
-              <h2 className="font-display text-2xl font-bold text-gradient-soft mb-1">
-                Creative Workspace
-              </h2>
-              <p className="text-sm text-white/40 mb-6">
-                Describe your project, choose a visual style, and generate a structured creative brief.
-              </p>
+            <div className="glass-strong p-6 sm:p-8 rounded-2xl border border-white/10">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-gradient-soft">
+                    Creative Brief Engine
+                  </h2>
+                  <p className="text-sm text-white/40">
+                    Describe what you are building, select a curated aesthetic, and generate a multi-part direction.
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick starter chips */}
+              <div className="mt-4 mb-5">
+                <div className="flex items-center gap-1.5 text-xs text-white/50 mb-2">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Quick Start Prompts:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {PROMPT_SUGGESTIONS.map((starter) => (
+                    <button
+                      key={starter.title}
+                      onClick={() => handleSelectStarter(starter)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white/70 hover:text-white hover:border-cyan-glow/40 hover:bg-white/[0.06] transition-all"
+                    >
+                      {starter.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Prompt input */}
               <div className="mb-6">
-                <label htmlFor="prompt-input" className="block text-sm font-medium text-white/70 mb-2">
-                  Project Description
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="prompt-input" className="block text-sm font-medium text-white/80">
+                    Project Description
+                  </label>
+                  {prompt && (
+                    <button
+                      onClick={() => {
+                        audioService.playToggleSound();
+                        setPrompt('');
+                      }}
+                      className="text-xs text-white/30 hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <X className="w-3 h-3" /> Clear
+                    </button>
+                  )}
+                </div>
                 <textarea
                   id="prompt-input"
                   value={prompt}
@@ -139,17 +233,21 @@ export function Workspace({ onBack }: WorkspaceProps) {
                   onKeyDown={handleKeyDown}
                   rows={4}
                   maxLength={MAX_PROMPT_LENGTH}
-                  placeholder="e.g. A sustainable fashion brand launching a recycled denim collection targeting eco-conscious millennials..."
+                  placeholder="e.g. A sustainable fashion brand launching a recycled denim collection targeting eco-conscious urban creators..."
                   className="input-field resize-none text-sm leading-relaxed"
                   aria-describedby="prompt-help"
                 />
                 <div id="prompt-help" className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-white/30">
+                  <span className="text-xs text-white/40">
                     {promptLength < MIN_PROMPT_LENGTH
-                      ? `${MIN_PROMPT_LENGTH - promptLength} more characters needed`
+                      ? `${MIN_PROMPT_LENGTH - promptLength} more characters required`
                       : 'Press Cmd/Ctrl + Enter to generate'}
                   </span>
-                  <span className={`text-xs font-mono ${promptLength > MAX_PROMPT_LENGTH * 0.9 ? 'text-amber-400' : 'text-white/20'}`}>
+                  <span
+                    className={`text-xs font-mono ${
+                      promptLength > MAX_PROMPT_LENGTH * 0.9 ? 'text-amber-400' : 'text-white/30'
+                    }`}
+                  >
                     {prompt.length}/{MAX_PROMPT_LENGTH}
                   </span>
                 </div>
@@ -157,29 +255,40 @@ export function Workspace({ onBack }: WorkspaceProps) {
 
               {/* Style selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-white/70 mb-3">
-                  Visual Style
+                <label className="block text-sm font-medium text-white/80 mb-3">
+                  Visual Style Philosophy
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {STYLE_OPTIONS.map((style) => {
                     const Icon = ICON_MAP[style.icon] || Circle;
                     const isSelected = selectedStyle === style.value;
                     return (
                       <button
                         key={style.value}
-                        onClick={() => setSelectedStyle(style.value)}
+                        onClick={() => {
+                          audioService.playSelectSound();
+                          setSelectedStyle(style.value);
+                        }}
                         className={`p-3 rounded-xl text-left transition-all group ${
                           isSelected
-                            ? 'bg-cyan-glow/[0.08] border border-cyan-glow/30'
-                            : 'bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-white/10'
+                            ? 'bg-cyan-glow/[0.12] border border-cyan-glow/50 shadow-[0_0_20px_-3px_rgba(34,211,238,0.3)]'
+                            : 'bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05] hover:border-white/15'
                         }`}
                         aria-pressed={isSelected}
                       >
-                        <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-cyan-glow' : 'text-white/40 group-hover:text-white/60'}`} />
-                        <div className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-white/60'}`}>
+                        <Icon
+                          className={`w-5 h-5 mb-2 transition-colors ${
+                            isSelected ? 'text-cyan-glow' : 'text-white/40 group-hover:text-white/70'
+                          }`}
+                        />
+                        <div
+                          className={`text-xs font-semibold ${
+                            isSelected ? 'text-white' : 'text-white/70'
+                          }`}
+                        >
                           {style.label}
                         </div>
-                        <div className="text-xs text-white/25 mt-0.5 hidden sm:block">
+                        <div className="text-[11px] text-white/30 mt-0.5 hidden sm:block leading-tight">
                           {style.description}
                         </div>
                       </button>
@@ -195,24 +304,26 @@ export function Workspace({ onBack }: WorkspaceProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/[0.08] border border-red-500/20 mb-4"
+                    className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/[0.08] border border-red-500/25 mb-4"
                   >
                     <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-300/80">{error}</p>
+                    <p className="text-sm text-red-300/90">{error}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Generate button */}
-              <button
+              <CinematicButton
+                variant="primary"
+                size="lg"
                 onClick={handleGenerate}
                 disabled={isGenerating || !isValid}
-                className="btn-primary w-full text-base py-3.5"
+                className="w-full"
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Generating Brief...
+                    Synthesizing Creative Brief...
                   </>
                 ) : (
                   <>
@@ -220,14 +331,12 @@ export function Workspace({ onBack }: WorkspaceProps) {
                     Generate Creative Brief
                   </>
                 )}
-              </button>
+              </CinematicButton>
 
-              {/* Demo mode notice */}
-              {generationService.isDemoMode() && (
-                <p className="text-xs text-white/25 text-center mt-3">
-                  Demo mode active — results are simulated, not from a live AI model
-                </p>
-              )}
+              {/* Simulation Mode Notice */}
+              <p className="text-xs text-white/30 text-center mt-3">
+                Structured simulation mode active · Instant generation without API bottlenecks
+              </p>
             </div>
 
             {/* Results area */}
@@ -238,7 +347,7 @@ export function Workspace({ onBack }: WorkspaceProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="glass p-12 flex flex-col items-center justify-center"
+                  className="glass p-12 rounded-2xl border border-white/10 flex flex-col items-center justify-center text-center"
                 >
                   <div className="relative w-20 h-20 mb-6">
                     <motion.div
@@ -256,10 +365,10 @@ export function Workspace({ onBack }: WorkspaceProps) {
                     </div>
                   </div>
                   <h3 className="font-display text-lg font-semibold text-white mb-1">
-                    Crafting your brief...
+                    Synthesizing creative foundation...
                   </h3>
-                  <p className="text-sm text-white/40">
-                    Analyzing your prompt and applying visual direction
+                  <p className="text-sm text-white/40 max-w-sm">
+                    Harmonizing color palette, typography scales, visual direction, and sequential assets.
                   </p>
                 </motion.div>
               ) : currentBrief ? (
@@ -269,7 +378,7 @@ export function Workspace({ onBack }: WorkspaceProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <BriefResult brief={currentBrief} />
+                  <BriefResult brief={currentBrief} onShowToast={onShowToast} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -277,17 +386,16 @@ export function Workspace({ onBack }: WorkspaceProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="glass p-12 flex flex-col items-center justify-center text-center"
+                  className="glass p-12 rounded-2xl border border-white/10 flex flex-col items-center justify-center text-center"
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
                     <Wand2 className="w-8 h-8 text-white/20" />
                   </div>
-                  <h3 className="font-display text-lg font-semibold text-white/60 mb-2">
+                  <h3 className="font-display text-lg font-semibold text-white/70 mb-2">
                     No brief generated yet
                   </h3>
-                  <p className="text-sm text-white/30 max-w-sm">
-                    Enter a project description above, pick a visual style, and
-                    click Generate to see your creative brief here.
+                  <p className="text-sm text-white/35 max-w-sm">
+                    Enter your project summary above or pick a quick-start prompt, select your preferred aesthetic, and generate your brief.
                   </p>
                 </motion.div>
               )}

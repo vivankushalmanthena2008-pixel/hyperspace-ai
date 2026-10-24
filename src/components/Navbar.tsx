@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Menu, X } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight } from 'lucide-react';
+import { CinematicButton } from '@/components/ui/CinematicButton';
+import { audioService } from '@/services/audioService';
 
 interface NavbarProps {
   onNavigate: (page: 'landing' | 'workspace') => void;
@@ -10,6 +12,7 @@ interface NavbarProps {
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'How It Works', href: '#how-it-works' },
+  { label: '3D World', href: '#world-3d' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ];
@@ -26,6 +29,7 @@ export function Navbar({ onNavigate, currentPage }: NavbarProps) {
   }, []);
 
   const handleLinkClick = (href: string) => {
+    audioService.playNavSound();
     setMobileOpen(false);
     if (currentPage !== 'landing') {
       onNavigate('landing');
@@ -45,19 +49,22 @@ export function Navbar({ onNavigate, currentPage }: NavbarProps) {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-base-950/80 backdrop-blur-xl border-b border-white/[0.06]'
+            ? 'bg-base-950/85 backdrop-blur-xl border-b border-white/[0.08] shadow-lg shadow-black/30'
             : 'bg-transparent'
         }`}
       >
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <button
-            onClick={() => onNavigate('landing')}
-            className="flex items-center gap-2.5 group"
+            onClick={() => {
+              audioService.playNavSound();
+              onNavigate('landing');
+            }}
+            className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow rounded-xl p-1"
             aria-label="HyperSpace AI home"
           >
-            <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-glow to-violet-glow flex items-center justify-center transition-transform group-hover:scale-110">
+            <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-glow via-teal-300 to-violet-glow flex items-center justify-center transition-transform group-hover:scale-105 shadow-md shadow-cyan-glow/20">
               <Sparkles className="w-5 h-5 text-base-950" />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-cyan-glow to-violet-glow blur-md opacity-50 -z-10" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-glow to-violet-glow blur-md opacity-50 -z-10" />
             </div>
             <span className="font-display text-lg font-semibold tracking-tight">
               HyperSpace<span className="text-cyan-glow"> AI</span>
@@ -69,7 +76,7 @@ export function Navbar({ onNavigate, currentPage }: NavbarProps) {
               <button
                 key={link.href}
                 onClick={() => handleLinkClick(link.href)}
-                className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.04]"
+                className="px-3.5 py-1.5 text-xs font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow"
               >
                 {link.label}
               </button>
@@ -77,23 +84,35 @@ export function Navbar({ onNavigate, currentPage }: NavbarProps) {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={() => onNavigate('workspace')}
-              className="text-sm text-white/60 hover:text-white transition-colors px-4 py-2"
+            <CinematicButton
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                audioService.playNavSound();
+                onNavigate('workspace');
+              }}
             >
-              Open Workspace
-            </button>
-            <button
-              onClick={() => onNavigate('workspace')}
-              className="btn-primary text-sm py-2 px-5"
+              Workspace
+            </CinematicButton>
+            <CinematicButton
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                audioService.playNavSound();
+                onNavigate('workspace');
+              }}
             >
               Try Free
-            </button>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </CinematicButton>
           </div>
 
           <button
-            className="md:hidden p-2 text-white/80"
-            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-glow rounded-lg"
+            onClick={() => {
+              audioService.playToggleSound();
+              setMobileOpen(!mobileOpen);
+            }}
             aria-label="Toggle navigation menu"
             aria-expanded={mobileOpen}
           >
@@ -108,27 +127,33 @@ export function Navbar({ onNavigate, currentPage }: NavbarProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-base-950/95 backdrop-blur-xl border-b border-white/[0.06] md:hidden overflow-hidden"
+            className="fixed top-16 left-0 right-0 z-40 bg-base-950/95 backdrop-blur-xl border-b border-white/[0.08] md:hidden overflow-hidden shadow-2xl"
           >
-            <div className="px-4 py-4 flex flex-col gap-1">
+            <div className="px-4 py-4 flex flex-col gap-1.5">
               {NAV_LINKS.map((link) => (
                 <button
                   key={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className="text-left px-4 py-3 text-white/70 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors"
+                  className="text-left px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors"
                 >
                   {link.label}
                 </button>
               ))}
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  onNavigate('workspace');
-                }}
-                className="btn-primary mt-2 w-full"
-              >
-                Try Free
-              </button>
+              <div className="pt-2 flex flex-col gap-2">
+                <CinematicButton
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    audioService.playNavSound();
+                    setMobileOpen(false);
+                    onNavigate('workspace');
+                  }}
+                  className="w-full"
+                >
+                  Launch Workspace Free
+                  <ArrowRight className="w-4 h-4" />
+                </CinematicButton>
+              </div>
             </div>
           </motion.div>
         )}

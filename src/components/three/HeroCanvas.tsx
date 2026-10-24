@@ -1,52 +1,71 @@
 import { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { CityScene } from '@/components/three/CityScene';
 
 function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
   const { camera, pointer } = useThree();
-  const targetX = useRef(0);
-  const targetY = useRef(0);
+  const targetPos = useRef(new THREE.Vector3(0, 1.4, 6.8));
+  const lookTarget = useRef(new THREE.Vector3(0, 0, 0));
 
-  useFrame((state) => {
-    if (reducedMotion) return;
+  useFrame((state, delta) => {
+    if (reducedMotion) {
+      camera.position.set(0, 1.2, 6.8);
+      camera.lookAt(0, 0, 0);
+      return;
+    }
 
-    // Mouse influence
-    targetX.current = pointer.x * 1.5;
-    targetY.current = pointer.y * 0.8;
+    // Continuous orbital rotation + interactive pointer parallax
+    const t = state.clock.elapsedTime * 0.06;
+    const baseRadius = 6.8;
+    const targetX = Math.sin(t) * baseRadius + pointer.x * 2.2;
+    const targetZ = Math.cos(t) * baseRadius - Math.abs(pointer.x) * 0.5;
+    const targetY = 1.3 + pointer.y * 1.4;
 
-    // Slow continuous orbit
-    const t = state.clock.elapsedTime * 0.08;
-    const baseRadius = 7.5;
-    const camX = Math.sin(t) * baseRadius + targetX.current;
-    const camZ = Math.cos(t) * baseRadius;
-    const camY = 2 + targetY.current;
+    targetPos.current.set(targetX, targetY, targetZ);
 
-    camera.position.x += (camX - camera.position.x) * 0.04;
-    camera.position.y += (camY - camera.position.y) * 0.04;
-    camera.position.z += (camZ - camera.position.z) * 0.04;
-    camera.lookAt(0, 0, 0);
+    // Frame-rate independent exponential damping for silky movement
+    camera.position.x = THREE.MathUtils.damp(camera.position.x, targetPos.current.x, 3.5, delta);
+    camera.position.y = THREE.MathUtils.damp(camera.position.y, targetPos.current.y, 3.5, delta);
+    camera.position.z = THREE.MathUtils.damp(camera.position.z, targetPos.current.z, 3.5, delta);
+
+    lookTarget.current.x = THREE.MathUtils.damp(lookTarget.current.x, pointer.x * 0.4, 4.0, delta);
+    lookTarget.current.y = THREE.MathUtils.damp(lookTarget.current.y, pointer.y * 0.3, 4.0, delta);
+    camera.lookAt(lookTarget.current.x, lookTarget.current.y, 0);
   });
 
   return null;
 }
 
-function SceneLights() {
+function StudioLighting() {
   return (
     <>
-      <ambientLight intensity={0.15} />
-      <pointLight position={[5, 5, 5]} intensity={30} color="#22d3ee" distance={20} />
-      <pointLight position={[-5, 3, -5]} intensity={20} color="#818cf8" distance={20} />
-      <pointLight position={[0, -3, 3]} intensity={15} color="#a78bfa" distance={15} />
-      <directionalLight position={[0, 10, 5]} intensity={0.3} color="#ffffff" />
+      {/* Balanced sky/ground ambient fill */}
+      <hemisphereLight args={['#67e8f9', '#090d16', 1.0]} />
+
+      {/* Warm key directional light */}
+      <directionalLight
+        position={[6, 9, 6]}
+        intensity={1.5}
+        color="#ffffff"
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+      />
+
+      {/* Cyberpunk rim lights */}
+      <pointLight position={[-6, 3, -4]} intensity={28} color="#22d3ee" distance={18} />
+      <pointLight position={[5, -2, 4]} intensity={24} color="#c084fc" distance={16} />
+      <pointLight position={[0, 5, -5]} intensity={20} color="#38bdf8" distance={16} />
+
+      {/* Central spotlight focusing on the citadel */}
       <spotLight
-        position={[0, 8, 0]}
-        angle={0.5}
-        penumbra={0.8}
-        intensity={10}
-        color="#67e8f9"
-        distance={20}
+        position={[0, 7, 0]}
+        intensity={25}
+        angle={0.7}
+        penumbra={0.6}
+        color="#bae6fd"
+        distance={18}
       />
     </>
   );
@@ -55,8 +74,10 @@ function SceneLights() {
 function isWebGLAvailable(): boolean {
   try {
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    return !!gl;
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext('webgl2') || canvas.getContext('webgl'))
+    );
   } catch {
     return false;
   }
@@ -72,52 +93,48 @@ function HeroCanvasInner({ reducedMotion, isMobile }: HeroCanvasProps) {
 
   return (
     <Canvas
-      camera={{ position: [0, 2, 7.5], fov: 45, near: 0.1, far: 50 }}
+      camera={{ position: [0, 1.4, 6.8], fov: 46, near: 0.1, far: 50 }}
       dpr={dpr}
       gl={{
-        antialias: !isMobile,
+        antialias: true,
         alpha: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.0,
+        toneMappingExposure: 1.15,
       }}
-      style={{ background: 'transparent' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        background: 'transparent',
+        pointerEvents: 'auto',
+      }}
     >
-      <SceneLights />
-      <fog attach="fog" args={['#030303', 8, 18]} />
+      <StudioLighting />
       <Suspense fallback={null}>
         <CityScene reducedMotion={reducedMotion} />
       </Suspense>
       <CameraRig reducedMotion={reducedMotion} />
       {!isMobile && (
-        <EffectComposer>
+        <EffectComposer multisampling={0}>
           <Bloom
-            intensity={0.8}
-            luminanceThreshold={0.2}
-            luminanceSmoothing={0.9}
+            intensity={0.45}
+            luminanceThreshold={0.6}
+            luminanceSmoothing={0.8}
             mipmapBlur
           />
-          <Vignette eskil={false} offset={0.3} darkness={0.6} />
         </EffectComposer>
       )}
     </Canvas>
   );
 }
 
-function FallbackOrb() {
+function FallbackMessage() {
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <div
-        className="w-64 h-64 rounded-full"
-        style={{
-          background: 'radial-gradient(circle at 35% 30%, rgba(34,211,238,0.5) 0%, rgba(129,140,248,0.3) 40%, rgba(167,139,250,0.1) 70%, transparent 85%)',
-          filter: 'blur(4px)',
-        }}
-      />
-      <div
-        className="absolute w-48 h-48 rounded-full border border-cyan-glow/20"
-        style={{ animation: 'spin 20s linear infinite' }}
-      />
+    <div className="relative w-full h-full flex flex-col items-center justify-center text-center p-6 text-white/50">
+      <div className="w-16 h-16 rounded-2xl bg-cyan-glow/10 border border-cyan-glow/20 flex items-center justify-center text-cyan-glow mb-3">
+        WebGL
+      </div>
+      <p className="text-sm">Hardware-accelerated WebGL is disabled or unavailable in this browser session.</p>
     </div>
   );
 }
@@ -130,7 +147,7 @@ export function HeroCanvas({ reducedMotion, isMobile }: HeroCanvasProps) {
   }, []);
 
   if (!webglSupported) {
-    return <FallbackOrb />;
+    return <FallbackMessage />;
   }
 
   return <HeroCanvasInner reducedMotion={reducedMotion} isMobile={isMobile} />;
